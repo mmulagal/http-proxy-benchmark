@@ -4,9 +4,9 @@ import { check } from 'k6';
 const targetUrl = __ENV.TARGET || 'http://localhost:8001';
 
 export const options = {
-  vus: 50,
-  iterations: 1000,
-  maxDuration: '60s',
+  vus: 100,
+  iterations: 5000,
+  maxDuration: '120s',
   thresholds: {
     http_req_duration: ['p(99)<2000', 'p(95)<1000'],
     http_req_failed: ['rate<0.01'],
