@@ -24,6 +24,7 @@ export default {
     }
 
     if (path === "/api/items") {
+      await Bun.sleep(500);
       return new Response(JSON.stringify({ data: items, count: items.length }), {
         headers: { "Content-Type": "application/json" },
       });
