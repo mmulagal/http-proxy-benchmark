@@ -1,13 +1,9 @@
 {
   "name": "node-proxy",
   "version": "1.0.0",
-  "description": "Node.js + Fastify reverse proxy for benchmarking",
+  "description": "Node.js raw http proxy for benchmarking",
   "type": "module",
   "scripts": {
     "start": "node index.mjs"
-  },
-  "dependencies": {
-    "fastify": "^4.28.0",
-    "@fastify/reply-from": "^9.0.0"
   }
 }

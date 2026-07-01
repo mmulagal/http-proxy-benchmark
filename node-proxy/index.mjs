@@ -1,29 +1,48 @@
-import Fastify from "fastify";
-import replyFrom from "@fastify/reply-from";
+import http from "node:http";
 
-const fastify = Fastify({ logger: false });
-
-// Register reply-from plugin pointing at upstream
-await fastify.register(replyFrom, {
-  base: "http://localhost:9000",
+// Keep-alive agent — same approach as the Bun proxy.
+// No framework; raw node:http so the comparison is stdlib vs stdlib vs stdlib.
+const agent = new http.Agent({
+  keepAlive: true,
+  maxSockets: 1000,
+  maxFreeSockets: 500,
 });
 
-// Health check must be registered BEFORE the wildcard proxy route
-fastify.get("/health", async () => ({
-  ok: true,
-  service: "node-proxy",
-  timestamp: new Date().toISOString(),
-}));
-
-// Proxy all other requests to upstream
-fastify.all("*", async (request, reply) => {
-  return reply.from(request.url);
-});
-
-try {
-  await fastify.listen({ port: 8002, host: "0.0.0.0" });
-  console.log("Node.js Fastify proxy listening on port 8002, forwarding to http://localhost:9000");
-} catch (err) {
-  console.error(err);
-  process.exit(1);
+function proxyRequest(path) {
+  return new Promise((resolve, reject) => {
+    const req = http.request(
+      { hostname: "localhost", port: 9000, path, method: "GET", agent },
+      (res) => {
+        const chunks = [];
+        res.on("data", (chunk) => chunks.push(chunk));
+        res.on("end", () =>
+          resolve({ status: res.statusCode, headers: res.headers, body: Buffer.concat(chunks) })
+        );
+        res.on("error", reject);
+      }
+    );
+    req.on("error", reject);
+    req.end();
+  });
 }
+
+const server = http.createServer(async (req, res) => {
+  if (req.url === "/health") {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ ok: true, service: "node-proxy", timestamp: new Date().toISOString() }));
+    return;
+  }
+
+  try {
+    const { status, headers, body } = await proxyRequest(req.url);
+    res.writeHead(status, headers);
+    res.end(body);
+  } catch (err) {
+    res.writeHead(502, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: "Bad Gateway" }));
+  }
+});
+
+server.listen(8002, "0.0.0.0", () => {
+  console.log("Node.js proxy listening on port 8002, forwarding to http://localhost:9000");
+});
