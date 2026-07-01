@@ -13,7 +13,7 @@ const items = Array.from({ length: 20 }, (_, i) => ({
 
 export default {
   port: 9000,
-  fetch(request: Request) {
+  async fetch(request: Request) {
     const url = new URL(request.url);
     const path = url.pathname;
 
