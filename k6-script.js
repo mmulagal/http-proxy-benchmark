@@ -5,17 +5,13 @@ const targetUrl = __ENV.TARGET || 'http://localhost:8001';
 
 export const options = {
   stages: [
-    { duration: '10s', target: 100  }, // ramp to 100 VUs
-    { duration: '20s', target: 100  }, // hold at 100
-    { duration: '10s', target: 500  }, // ramp to 500 VUs
-    { duration: '20s', target: 500  }, // hold at 500
-    { duration: '10s', target: 1000 }, // ramp to 1000 VUs
-    { duration: '20s', target: 1000 }, // hold at 1000
-    { duration: '10s', target: 0    }, // ramp down
+    { duration: '10s', target: 100 }, // ramp up
+    { duration: '60s', target: 100 }, // hold at 100 VUs for 60s
+    { duration: '5s',  target: 0   }, // ramp down
   ],
   thresholds: {
-    http_req_duration: ['p(99)<3000', 'p(95)<1500'],
-    http_req_failed: ['rate<0.05'],
+    http_req_duration: ['p(99)<1000', 'p(95)<500'],
+    http_req_failed: ['rate<0.01'],
   },
   summaryTrendStats: ['avg', 'min', 'med', 'max', 'p(90)', 'p(95)', 'p(99)'],
 };
